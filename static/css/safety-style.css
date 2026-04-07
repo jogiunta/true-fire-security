@@ -183,4 +183,75 @@ h1, h2, h3 { margin-top: 0; color: var(--dark); }
     
     .modal-content { margin: 30% auto; padding: 30px 20px; }
     .modal-title { font-size: 1.6rem; }
+    .trust-grid { grid-template-columns: 1fr 1fr; }
+    .hero-cta-group { flex-direction: column; align-items: center; }
+    .hero-btn-primary,
+    .hero-btn-secondary { width: 100%; max-width: 320px; text-align: center; }
 }
+
+@media (max-width: 480px) {
+    .trust-grid { grid-template-columns: 1fr; }
+}
+
+/* --- HERO CTA BUTTONS --- */
+.hero-cta-group {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 0 auto 20px;
+}
+.hero-btn-primary,
+.hero-btn-secondary {
+    padding: 16px 32px;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 1rem;
+    text-decoration: none;
+    transition: 0.3s;
+    display: inline-block;
+}
+.hero-btn-primary { background: var(--accent); color: white; }
+.hero-btn-primary:hover { background: #a93226; transform: scale(1.03); }
+.hero-btn-secondary { background: transparent; color: white; border: 2px solid white; }
+.hero-btn-secondary:hover { background: rgba(255,255,255,0.15); }
+.hero-audience { font-size: 0.9rem; color: #aaa; margin-top: 10px; }
+
+/* --- TRUST BAR (UPGRADED) --- */
+.trust-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 30px;
+    padding: 40px 0;
+}
+.trust-item { display: flex; align-items: flex-start; gap: 15px; }
+.trust-icon { font-size: 2rem; color: var(--primary); flex-shrink: 0; margin-top: 2px; }
+.trust-icon--red { color: var(--accent); }
+.trust-text strong { display: block; font-size: 0.95rem; font-weight: 700; color: var(--dark); margin-bottom: 4px; }
+.trust-text span { font-size: 0.85rem; color: #666; }
+
+/* --- COMMERCIAL INTRO --- */
+.commercial-intro { max-width: 800px; margin: 0 auto 50px; text-align: center; }
+
+/* --- COMPLIANCE LINK --- */
+.compliance-link { margin-top: 25px; font-size: 0.95rem; color: #555; }
+.compliance-link a { color: var(--primary); font-weight: 600; text-decoration: none; }
+.compliance-link a:hover { text-decoration: underline; }
+
+/* --- GC CARD BUTTON --- */
+.biz-cta-btn {
+    display: inline-block;
+    margin-top: 20px;
+    background: var(--primary);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: 0.3s;
+}
+.biz-cta-btn:hover { background: #004494; transform: scale(1.03); }
+
+/* --- REVIEWS FOOTER LINE --- */
+.reviews-footer-line { text-align: center; margin-top: 40px; font-size: 0.9rem; color: #aaa; }
