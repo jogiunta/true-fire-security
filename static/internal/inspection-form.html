@@ -71,12 +71,6 @@
 
     textarea { resize: vertical; min-height: 100px; }
 
-    .row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-
     button[type="submit"] {
       width: 100%;
       padding: 11px;
@@ -145,20 +139,9 @@
       </select>
     </div>
 
-    <div class="row">
-      <div class="field">
-        <label for="inspection-date">Inspection Date</label>
-        <input type="date" id="inspection-date" name="inspection_date" required>
-      </div>
-      <div class="field">
-        <label for="next-due-date">Next Due Date</label>
-        <input type="date" id="next-due-date" name="next_due_date" required>
-      </div>
-    </div>
-
     <div class="field">
-      <label for="inspector-name">Inspector Name</label>
-      <input type="text" id="inspector-name" name="inspector_name" placeholder="Full name" required>
+      <label for="inspection-date">Inspection Date</label>
+      <input type="date" id="inspection-date" name="inspection_date" required>
     </div>
 
     <div class="field">
@@ -188,19 +171,18 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/supabase-client.js"></script>
 <script>
-  // Auth guard — runs before anything else
+  // Auth guard
   ;(async function () {
     const { data: { session } } = await supabaseClient.auth.getSession()
     if (!session) { window.location.replace('login.html'); return }
 
-    const { data: customer } = await supabaseClient
-      .from('customers')
-      .select('role')
+    const { data: adminCheck } = await supabaseClient
+      .from('admin_users')
+      .select('user_id')
       .eq('user_id', session.user.id)
-      .eq('role', 'admin')
       .maybeSingle()
 
-    if (!customer) {
+    if (!adminCheck) {
       await supabaseClient.auth.signOut()
       window.location.replace('login.html')
     }
@@ -233,6 +215,7 @@
     const { data: customers, error } = await supabaseClient
       .from('customers')
       .select('id, full_name')
+      .neq('role', 'admin')
       .order('full_name')
 
     if (error) {
@@ -253,7 +236,6 @@
   // Load properties when customer changes
   customerSelect.addEventListener('change', async function () {
     const customerId = customerSelect.value
-
     propertySelect.innerHTML = '<option value="">Loading…</option>'
     propertySelect.disabled = true
 
@@ -264,9 +246,9 @@
 
     const { data: properties, error } = await supabaseClient
       .from('properties')
-      .select('id, address')
+      .select('id, name, address')
       .eq('customer_id', customerId)
-      .order('address')
+      .order('name')
 
     if (error) {
       propertySelect.innerHTML = '<option value="">Failed to load properties</option>'
@@ -283,7 +265,7 @@
     properties.forEach(function (p) {
       const opt = document.createElement('option')
       opt.value = p.id
-      opt.textContent = p.address
+      opt.textContent = p.name + ' — ' + p.address
       propertySelect.appendChild(opt)
     })
     propertySelect.disabled = false
@@ -297,13 +279,16 @@
     const customerId     = customerSelect.value
     const propertyId     = propertySelect.value
     const inspectionDate = document.getElementById('inspection-date').value
-    const nextDueDate    = document.getElementById('next-due-date').value
-    const inspectorName  = document.getElementById('inspector-name').value.trim()
     const result         = document.getElementById('result').value
     const notes          = document.getElementById('notes').value.trim()
     const pdfFile        = document.getElementById('pdf-upload').files[0]
 
-    if (!customerId || !propertyId || !inspectionDate || !nextDueDate || !inspectorName || !result || !pdfFile) {
+    // Auto-calculate next due date (12 months out)
+    const nextDueDate = new Date(inspectionDate)
+    nextDueDate.setFullYear(nextDueDate.getFullYear() + 1)
+    const nextDueDateStr = nextDueDate.toISOString().split('T')[0]
+
+    if (!customerId || !propertyId || !inspectionDate || !result || !pdfFile) {
       showAlert('error', 'Please fill in all required fields.')
       return
     }
@@ -331,9 +316,9 @@
         .insert({
           property_id:     propertyId,
           inspection_date: inspectionDate,
-          next_due_date:   nextDueDate,
-          inspector_name:  inspectorName,
-          result:          result,
+          next_due_date:   nextDueDateStr,
+          inspector_name:  'Joseph Giunta',
+          status:          result,
           notes:           notes || null,
           pdf_url:         publicUrl
         })
@@ -343,7 +328,7 @@
       if (insertError) throw new Error('Save failed: ' + insertError.message)
 
       setProgress('')
-      showAlert('success', 'Inspection submitted successfully! Inspection ID: ' + inspection.id)
+      showAlert('success', 'Inspection submitted! ID: ' + inspection.id)
       form.reset()
       propertySelect.disabled = true
       propertySelect.innerHTML = '<option value="">Select a customer first</option>'
