@@ -323,8 +323,38 @@
       pdfLink.style.display = 'none'
     }
     console.log('About to show report')
-    document.getElementById('loading').style.display = 'none'
-    document.getElementById('report').style.display = ''
+    try {
+      document.title = 'Inspection — ' + (inspection.properties?.name || 'True Fire Security')
+      document.getElementById('property-name').textContent    = inspection.properties?.name    || '—'
+      document.getElementById('property-address').textContent = inspection.properties?.address || ''
+      document.getElementById('customer-name').textContent    = inspection.properties?.customers?.full_name || '—'
+      document.getElementById('inspector-name').textContent   = inspection.inspector_name || '—'
+      document.getElementById('inspection-date').textContent  = formatDate(inspection.inspection_date)
+      document.getElementById('next-due-date').textContent    = formatDate(inspection.next_due_date)
+
+      const badge = document.getElementById('result-badge')
+      const result = (inspection.status || '').toLowerCase()
+      badge.textContent = result.toUpperCase()
+      badge.className = 'badge ' + (result === 'pass' ? 'pass' : 'fail')
+
+      if (inspection.notes && inspection.notes.trim()) {
+        document.getElementById('notes').textContent = inspection.notes.trim()
+        document.getElementById('notes-block').style.display = ''
+      }
+
+      const pdfLink = document.getElementById('pdf-link')
+      if (inspection.pdf_url) {
+        pdfLink.href = inspection.pdf_url
+      } else {
+        pdfLink.style.display = 'none'
+      }
+
+      document.getElementById('loading').style.display = 'none'
+      document.getElementById('report').style.display = ''
+
+    } catch(err) {
+      console.error('Display error:', err.message)
+    }
   })
 </script>
 </body>
