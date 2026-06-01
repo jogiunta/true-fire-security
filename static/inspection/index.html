@@ -294,8 +294,8 @@
     if (error || !inspection) { showError(); return }
     if (error || !inspection) { showError(); return }
 
-    console.log('Inspection data:', inspection)
-    console.log('Properties:', inspection.properties)
+    console.log('Inspection data:', JSON.stringify(inspection))
+    console.log('Properties:', JSON.stringify(inspection.properties))
     // Populate
     document.title = 'Inspection — ' + (inspection.properties?.name || 'True Fire Security')
 
