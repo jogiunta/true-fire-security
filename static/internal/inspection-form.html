@@ -214,8 +214,8 @@
   window.addEventListener('load', async function () {
     const { data: customers, error } = await supabaseClient
       .from('customers')
-      .select('id, name')
-      .order('name')
+      .select('id, full_name')
+      .order('full_name')
 
     if (error) {
       customerSelect.innerHTML = '<option value="">Failed to load customers</option>'
@@ -227,7 +227,7 @@
     customers.forEach(function (c) {
       const opt = document.createElement('option')
       opt.value = c.id
-      opt.textContent = c.name
+      opt.textContent = c.full_name
       customerSelect.appendChild(opt)
     })
   })
@@ -311,7 +311,6 @@
       const { data: inspection, error: insertError } = await supabaseClient
         .from('inspections')
         .insert({
-          customer_id:     customerId,
           property_id:     propertyId,
           inspection_date: inspectionDate,
           next_due_date:   nextDueDate,
