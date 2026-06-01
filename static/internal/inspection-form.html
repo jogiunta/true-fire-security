@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Inspection — True Fire Security</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f5f5;
+      color: #222;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 40px 16px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.12);
+      padding: 40px;
+      width: 100%;
+      max-width: 640px;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin-bottom: 28px;
+      color: #111;
+    }
+
+    .field {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: .85rem;
+      font-weight: 500;
+      color: #444;
+      margin-bottom: 6px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 5px;
+      font-size: .95rem;
+      color: #111;
+      background: #fff;
+      transition: border-color .15s;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #c0392b;
+      box-shadow: 0 0 0 3px rgba(192,57,43,.1);
+    }
+
+    select:disabled, input:disabled {
+      background: #f9f9f9;
+      color: #999;
+      cursor: not-allowed;
+    }
+
+    textarea { resize: vertical; min-height: 100px; }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    button[type="submit"] {
+      width: 100%;
+      padding: 11px;
+      background: #c0392b;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background .15s, opacity .15s;
+    }
+
+    button[type="submit"]:hover:not(:disabled) { background: #a93226; }
+    button[type="submit"]:disabled { opacity: .55; cursor: not-allowed; }
+
+    .alert {
+      padding: 14px 16px;
+      border-radius: 5px;
+      font-size: .9rem;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .alert.success {
+      background: #ecfdf5;
+      border: 1px solid #6ee7b7;
+      color: #065f46;
+    }
+
+    .alert.error {
+      background: #fef2f2;
+      border: 1px solid #fca5a5;
+      color: #991b1b;
+    }
+
+    .progress {
+      font-size: .82rem;
+      color: #6b7280;
+      margin-top: 10px;
+      text-align: center;
+      min-height: 1.2em;
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>New Inspection</h1>
+
+  <div id="alert" class="alert" role="alert"></div>
+
+  <form id="inspection-form" novalidate>
+
+    <div class="field">
+      <label for="customer-select">Customer</label>
+      <select id="customer-select" name="customer_id" required>
+        <option value="">Loading customers…</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="property-select">Property</label>
+      <select id="property-select" name="property_id" required disabled>
+        <option value="">Select a customer first</option>
+      </select>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label for="inspection-date">Inspection Date</label>
+        <input type="date" id="inspection-date" name="inspection_date" required>
+      </div>
+      <div class="field">
+        <label for="next-due-date">Next Due Date</label>
+        <input type="date" id="next-due-date" name="next_due_date" required>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="inspector-name">Inspector Name</label>
+      <input type="text" id="inspector-name" name="inspector_name" placeholder="Full name" required>
+    </div>
+
+    <div class="field">
+      <label for="result">Result</label>
+      <select id="result" name="result" required>
+        <option value="">Select result</option>
+        <option value="pass">Pass</option>
+        <option value="fail">Fail</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="notes">Notes</label>
+      <textarea id="notes" name="notes" placeholder="Optional notes…"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="pdf-upload">Inspection Report (PDF)</label>
+      <input type="file" id="pdf-upload" name="pdf" accept="application/pdf" required>
+    </div>
+
+    <button type="submit" id="submit-btn">Submit Inspection</button>
+    <p class="progress" id="progress-msg"></p>
+  </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/supabase-client.js"></script>
+<script>
+  const customerSelect = document.getElementById('customer-select')
+  const propertySelect = document.getElementById('property-select')
+  const form           = document.getElementById('inspection-form')
+  const submitBtn      = document.getElementById('submit-btn')
+  const alertEl        = document.getElementById('alert')
+  const progressMsg    = document.getElementById('progress-msg')
+
+  function showAlert(type, message) {
+    alertEl.className = 'alert ' + type
+    alertEl.textContent = message
+    alertEl.style.display = 'block'
+    alertEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  }
+
+  function hideAlert() {
+    alertEl.style.display = 'none'
+  }
+
+  function setProgress(msg) {
+    progressMsg.textContent = msg
+  }
+
+  // Load customers on page load
+  window.addEventListener('load', async function () {
+    const { data: customers, error } = await supabaseClient
+      .from('customers')
+      .select('id, name')
+      .order('name')
+
+    if (error) {
+      customerSelect.innerHTML = '<option value="">Failed to load customers</option>'
+      showAlert('error', 'Could not load customers: ' + error.message)
+      return
+    }
+
+    customerSelect.innerHTML = '<option value="">Select a customer</option>'
+    customers.forEach(function (c) {
+      const opt = document.createElement('option')
+      opt.value = c.id
+      opt.textContent = c.name
+      customerSelect.appendChild(opt)
+    })
+  })
+
+  // Load properties when customer changes
+  customerSelect.addEventListener('change', async function () {
+    const customerId = customerSelect.value
+
+    propertySelect.innerHTML = '<option value="">Loading…</option>'
+    propertySelect.disabled = true
+
+    if (!customerId) {
+      propertySelect.innerHTML = '<option value="">Select a customer first</option>'
+      return
+    }
+
+    const { data: properties, error } = await supabaseClient
+      .from('properties')
+      .select('id, address')
+      .eq('customer_id', customerId)
+      .order('address')
+
+    if (error) {
+      propertySelect.innerHTML = '<option value="">Failed to load properties</option>'
+      showAlert('error', 'Could not load properties: ' + error.message)
+      return
+    }
+
+    if (properties.length === 0) {
+      propertySelect.innerHTML = '<option value="">No properties found</option>'
+      return
+    }
+
+    propertySelect.innerHTML = '<option value="">Select a property</option>'
+    properties.forEach(function (p) {
+      const opt = document.createElement('option')
+      opt.value = p.id
+      opt.textContent = p.address
+      propertySelect.appendChild(opt)
+    })
+    propertySelect.disabled = false
+  })
+
+  // Form submit
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault()
+    hideAlert()
+
+    const customerId     = customerSelect.value
+    const propertyId     = propertySelect.value
+    const inspectionDate = document.getElementById('inspection-date').value
+    const nextDueDate    = document.getElementById('next-due-date').value
+    const inspectorName  = document.getElementById('inspector-name').value.trim()
+    const result         = document.getElementById('result').value
+    const notes          = document.getElementById('notes').value.trim()
+    const pdfFile        = document.getElementById('pdf-upload').files[0]
+
+    if (!customerId || !propertyId || !inspectionDate || !nextDueDate || !inspectorName || !result || !pdfFile) {
+      showAlert('error', 'Please fill in all required fields.')
+      return
+    }
+
+    submitBtn.disabled = true
+
+    try {
+      // Upload PDF
+      setProgress('Uploading PDF…')
+      const fileName = propertyId + '/' + Date.now() + '_' + pdfFile.name.replace(/\s+/g, '_')
+      const { error: uploadError } = await supabaseClient.storage
+        .from('inspection-pdfs')
+        .upload(fileName, pdfFile, { contentType: 'application/pdf', upsert: false })
+
+      if (uploadError) throw new Error('Upload failed: ' + uploadError.message)
+
+      const { data: { publicUrl } } = supabaseClient.storage
+        .from('inspection-pdfs')
+        .getPublicUrl(fileName)
+
+      // Insert record
+      setProgress('Saving inspection record…')
+      const { data: inspection, error: insertError } = await supabaseClient
+        .from('inspections')
+        .insert({
+          customer_id:     customerId,
+          property_id:     propertyId,
+          inspection_date: inspectionDate,
+          next_due_date:   nextDueDate,
+          inspector_name:  inspectorName,
+          result:          result,
+          notes:           notes || null,
+          pdf_url:         publicUrl
+        })
+        .select('id')
+        .single()
+
+      if (insertError) throw new Error('Save failed: ' + insertError.message)
+
+      setProgress('')
+      showAlert('success', 'Inspection submitted successfully! Inspection ID: ' + inspection.id)
+      form.reset()
+      propertySelect.disabled = true
+      propertySelect.innerHTML = '<option value="">Select a customer first</option>'
+
+    } catch (err) {
+      setProgress('')
+      showAlert('error', err.message)
+    } finally {
+      submitBtn.disabled = false
+    }
+  })
+</script>
+</body>
+</html>
