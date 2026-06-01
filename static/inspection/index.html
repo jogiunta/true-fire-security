@@ -48,7 +48,6 @@
       max-width: 580px;
     }
 
-    /* Loading / error states */
     .state {
       text-align: center;
       padding: 48px 0;
@@ -83,7 +82,6 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Report content */
     #report { display: none; }
 
     .report-header {
@@ -248,8 +246,11 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://www.truefireandsecurity.com/static/js/supabase-client.js"></script>
 <script>
+  const SUPABASE_URL      = 'https://pbwzpcgjrmvbhpztvcwh.supabase.co'
+  const SUPABASE_ANON_KEY = 'sb_publishable_blSRkABHYhif93qa7JYfwg_qPVeIJhs'
+  const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
   function formatDate(dateStr) {
     if (!dateStr) return '—'
     const [year, month, day] = dateStr.split('-').map(Number)
@@ -266,9 +267,10 @@
   document.addEventListener('DOMContentLoaded', async function () {
     const params = new URLSearchParams(window.location.search)
     const id = params.get('id')
+
     if (!id) { showError(); return }
 
-    const { data: inspection, error } = await supabaseClient
+    const { data: inspection, error } = await client
       .from('inspections')
       .select(`
         id,
@@ -292,17 +294,18 @@
     if (error || !inspection) { showError(); return }
 
     document.title = 'Inspection — ' + (inspection.properties?.name || 'True Fire Security')
-    document.getElementById('property-name').textContent    = inspection.properties?.name || '—'
-    document.getElementById('property-address').textContent = inspection.properties?.address || ''
-    document.getElementById('customer-name').textContent    = inspection.properties?.customers?.full_name || '—'
-    document.getElementById('inspector-name').textContent   = inspection.inspector_name || '—'
+
+    document.getElementById('property-name').textContent    = inspection.properties?.name                     || '—'
+    document.getElementById('property-address').textContent = inspection.properties?.address                  || ''
+    document.getElementById('customer-name').textContent    = inspection.properties?.customers?.full_name      || '—'
+    document.getElementById('inspector-name').textContent   = inspection.inspector_name                        || '—'
     document.getElementById('inspection-date').textContent  = formatDate(inspection.inspection_date)
     document.getElementById('next-due-date').textContent    = formatDate(inspection.next_due_date)
 
-    const badge = document.getElementById('result-badge')
     const status = (inspection.status || '').toLowerCase()
+    const badge  = document.getElementById('result-badge')
     badge.textContent = status.toUpperCase()
-    badge.className = 'badge ' + (status === 'pass' ? 'pass' : 'fail')
+    badge.className   = 'badge ' + (status === 'pass' ? 'pass' : 'fail')
 
     if (inspection.notes && inspection.notes.trim()) {
       document.getElementById('notes').textContent = inspection.notes.trim()
@@ -317,7 +320,8 @@
     }
 
     document.getElementById('loading').style.display = 'none'
-    document.getElementById('report').style.display = ''
-    console.log('Report display set')
+    document.getElementById('report').style.display  = ''
   })
 </script>
+</body>
+</html>
