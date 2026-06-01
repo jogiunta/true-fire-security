@@ -115,6 +115,94 @@
       text-align: center;
       min-height: 1.2em;
     }
+
+    #qr-section {
+      display: none;
+      margin-top: 20px;
+      padding: 20px;
+      background: #ecfdf5;
+      border: 1px solid #6ee7b7;
+      border-radius: 5px;
+      text-align: center;
+    }
+
+    #qr-section .qr-success-msg {
+      font-size: .9rem;
+      color: #065f46;
+      font-weight: 500;
+      margin-bottom: 16px;
+    }
+
+    #qr-canvas-wrap canvas {
+      border: 6px solid #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,.12);
+      border-radius: 4px;
+    }
+
+    #qr-property-label {
+      margin-top: 12px;
+      font-size: .85rem;
+      font-weight: 600;
+      color: #111;
+    }
+
+    #qr-address-label {
+      font-size: .8rem;
+      color: #555;
+      margin-top: 2px;
+    }
+
+    .qr-print-btn {
+      display: inline-block;
+      margin-top: 14px;
+      padding: 8px 20px;
+      background: #065f46;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-size: .88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s;
+    }
+
+    .qr-print-btn:hover { background: #044434; }
+
+    @media print {
+      body > * { display: none !important; }
+      #print-qr-root { display: flex !important; }
+    }
+
+    #print-qr-root {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    #print-qr-root .print-brand {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #c0392b;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    #print-qr-root .print-property {
+      margin-top: 14px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #111;
+    }
+
+    #print-qr-root .print-address {
+      font-size: .85rem;
+      color: #555;
+      margin-top: 4px;
+    }
   </style>
 </head>
 <body>
@@ -122,6 +210,14 @@
   <h1>New Inspection</h1>
 
   <div id="alert" class="alert" role="alert"></div>
+
+  <div id="qr-section">
+    <p class="qr-success-msg" id="qr-success-msg"></p>
+    <div id="qr-canvas-wrap"></div>
+    <p id="qr-property-label"></p>
+    <p id="qr-address-label"></p>
+    <button type="button" class="qr-print-btn" id="qr-print-btn">Print QR Code</button>
+  </div>
 
   <form id="inspection-form" novalidate>
 
@@ -168,7 +264,15 @@
   </form>
 </div>
 
+<div id="print-qr-root">
+  <div class="print-brand">True Fire Security</div>
+  <div id="print-qr-canvas-wrap"></div>
+  <div class="print-property" id="print-property-name"></div>
+  <div class="print-address" id="print-address"></div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script src="../js/supabase-client.js"></script>
 <script>
   // Auth guard
@@ -194,6 +298,10 @@
   const submitBtn      = document.getElementById('submit-btn')
   const alertEl        = document.getElementById('alert')
   const progressMsg    = document.getElementById('progress-msg')
+
+  document.getElementById('qr-print-btn').addEventListener('click', function () {
+    window.print()
+  })
 
   function showAlert(type, message) {
     alertEl.className = 'alert ' + type
@@ -265,6 +373,8 @@
     properties.forEach(function (p) {
       const opt = document.createElement('option')
       opt.value = p.id
+      opt.dataset.name    = p.name    || ''
+      opt.dataset.address = p.address || ''
       opt.textContent = p.name + ' — ' + p.address
       propertySelect.appendChild(opt)
     })
@@ -328,7 +438,35 @@
       if (insertError) throw new Error('Save failed: ' + insertError.message)
 
       setProgress('')
-      showAlert('success', 'Inspection submitted! ID: ' + inspection.id)
+
+      const selectedOpt   = propertySelect.options[propertySelect.selectedIndex]
+      const propertyName  = selectedOpt ? selectedOpt.dataset.name    : ''
+      const propertyAddr  = selectedOpt ? selectedOpt.dataset.address : ''
+      const inspectionUrl = 'https://www.truefireandsecurity.com/static/inspection/?id=' + inspection.id
+
+      // Populate inline QR section
+      document.getElementById('qr-success-msg').textContent  = 'Inspection submitted! ID: ' + inspection.id
+      document.getElementById('qr-property-label').textContent = propertyName
+      document.getElementById('qr-address-label').textContent  = propertyAddr
+
+      const qrWrap = document.getElementById('qr-canvas-wrap')
+      qrWrap.innerHTML = ''
+      QRCode.toCanvas(inspectionUrl, { width: 180, margin: 1 }, function (err, canvas) {
+        if (!err) qrWrap.appendChild(canvas)
+      })
+
+      // Populate print root
+      document.getElementById('print-property-name').textContent = propertyName
+      document.getElementById('print-address').textContent       = propertyAddr
+      const printWrap = document.getElementById('print-qr-canvas-wrap')
+      printWrap.innerHTML = ''
+      QRCode.toCanvas(inspectionUrl, { width: 240, margin: 1 }, function (err, canvas) {
+        if (!err) printWrap.appendChild(canvas)
+      })
+
+      document.getElementById('qr-section').style.display = ''
+      document.getElementById('qr-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+
       form.reset()
       propertySelect.disabled = true
       propertySelect.innerHTML = '<option value="">Select a customer first</option>'
