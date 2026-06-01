@@ -176,16 +176,6 @@
     loginBtn.textContent = 'Logging in…'
 
     const { data: { session }, error: signInError } = await supabaseClient.auth.signInWithPassword({ email, password })
-    console.log('Logged in as:', session.user.id)
-
-    const { data, error } = await supabaseClient
-      .from('customers')
-      .select('role')
-      .eq('user_id', session.user.id)
-      .maybeSingle()
-
-    console.log('Customer data:', data)
-    console.log('Customer error:', error)
     if (signInError) {
       showError(signInError.message)
       loginBtn.disabled = false
