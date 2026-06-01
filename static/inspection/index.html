@@ -263,7 +263,7 @@
     document.getElementById('error').style.display = ''
   }
 
-  window.addEventListener('load', async function () {
+  document.addEventListener('DOMContentLoaded', async function () {
     const params = new URLSearchParams(window.location.search)
     const id = params.get('id')
     if (!id) { showError(); return }
