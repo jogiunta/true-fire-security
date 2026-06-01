@@ -439,15 +439,15 @@
 
       setProgress('')
 
-      const selectedOpt   = propertySelect.options[propertySelect.selectedIndex]
-      const propertyName  = selectedOpt ? selectedOpt.dataset.name    : ''
-      const propertyAddr  = selectedOpt ? selectedOpt.dataset.address : ''
-      const inspectionUrl = 'https://www.truefireandsecurity.com/static/inspection/?id=' + inspection.id
+      const selectedOpt    = propertySelect.options[propertySelect.selectedIndex]
+      const qrPropertyName = selectedOpt ? selectedOpt.dataset.name    : ''
+      const qrPropertyAddr = selectedOpt ? selectedOpt.dataset.address : ''
+      const inspectionUrl  = 'https://www.truefireandsecurity.com/static/inspection/?id=' + inspection.id
 
       // Populate inline QR section
-      document.getElementById('qr-success-msg').textContent  = 'Inspection submitted! ID: ' + inspection.id
-      document.getElementById('qr-property-label').textContent = propertyName
-      document.getElementById('qr-address-label').textContent  = propertyAddr
+      document.getElementById('qr-success-msg').textContent    = 'Inspection submitted! ID: ' + inspection.id
+      document.getElementById('qr-property-label').textContent = qrPropertyName
+      document.getElementById('qr-address-label').textContent  = qrPropertyAddr
 
       const qrWrap = document.getElementById('qr-canvas-wrap')
       qrWrap.innerHTML = ''
@@ -456,8 +456,8 @@
       })
 
       // Populate print root
-      document.getElementById('print-property-name').textContent = propertyName
-      document.getElementById('print-address').textContent       = propertyAddr
+      document.getElementById('print-property-name').textContent = qrPropertyName
+      document.getElementById('print-address').textContent       = qrPropertyAddr
       const printWrap = document.getElementById('print-qr-canvas-wrap')
       printWrap.innerHTML = ''
       QRCode.toCanvas(inspectionUrl, { width: 240, margin: 1 }, function (err, canvas) {
