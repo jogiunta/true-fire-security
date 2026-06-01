@@ -160,7 +160,7 @@
 
     <div class="field">
       <label for="pdf-upload">Inspection Report (PDF)</label>
-      <input type="file" id="pdf-upload" name="pdf" accept="application/pdf" required>
+      <input type="file" id="pdf-upload" name="pdf" accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required>
     </div>
 
     <button type="submit" id="submit-btn">Submit Inspection</button>
@@ -301,7 +301,7 @@
       const fileName = propertyId + '/' + Date.now() + '_' + pdfFile.name.replace(/\s+/g, '_')
       const { error: uploadError } = await supabaseClient.storage
         .from('inspection-pdfs')
-        .upload(fileName, pdfFile, { contentType: 'application/pdf', upsert: false })
+        .upload(fileName, pdfFile, { contentType: pdfFile.type, upsert: false })
 
       if (uploadError) throw new Error('Upload failed: ' + uploadError.message)
 
