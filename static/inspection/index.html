@@ -277,15 +277,15 @@
         inspection_date,
         next_due_date,
         inspector_name,
-        result,
+        status,
         notes,
         pdf_url,
         properties (
           name,
-          address
-        ),
-        customers (
-          full_name
+          address,
+          customers (
+            full_name
+          )
         )
       `)
       .eq('id', id)
@@ -298,13 +298,13 @@
 
     document.getElementById('property-name').textContent   = inspection.properties?.name    || '—'
     document.getElementById('property-address').textContent = inspection.properties?.address || ''
-    document.getElementById('customer-name').textContent   = inspection.customers?.full_name || '—'
+    document.getElementById('customer-name').textContent = inspection.properties?.customers?.full_name || '—'
     document.getElementById('inspector-name').textContent  = inspection.inspector_name       || '—'
     document.getElementById('inspection-date').textContent = formatDate(inspection.inspection_date)
     document.getElementById('next-due-date').textContent   = formatDate(inspection.next_due_date)
 
     const badge = document.getElementById('result-badge')
-    const result = (inspection.result || '').toLowerCase()
+    const result = (inspection.status || '').toLowerCase()
     badge.textContent = result.toUpperCase()
     badge.className = 'badge ' + (result === 'pass' ? 'pass' : 'fail')
 
