@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — True Fire Security</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f5f5;
+      color: #222;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 16px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.12);
+      padding: 40px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .logo h1 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #c0392b;
+      letter-spacing: .02em;
+    }
+
+    .logo p {
+      font-size: .8rem;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    .field {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      font-size: .85rem;
+      font-weight: 500;
+      color: #444;
+      margin-bottom: 6px;
+    }
+
+    input {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 5px;
+      font-size: .95rem;
+      color: #111;
+      background: #fff;
+      transition: border-color .15s;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #c0392b;
+      box-shadow: 0 0 0 3px rgba(192,57,43,.1);
+    }
+
+    button[type="submit"] {
+      width: 100%;
+      padding: 11px;
+      background: #c0392b;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 4px;
+      transition: background .15s, opacity .15s;
+    }
+
+    button[type="submit"]:hover:not(:disabled) { background: #a93226; }
+    button[type="submit"]:disabled { opacity: .55; cursor: not-allowed; }
+
+    .alert {
+      padding: 12px 14px;
+      border-radius: 5px;
+      font-size: .875rem;
+      margin-bottom: 18px;
+      display: none;
+    }
+
+    .alert.error {
+      background: #fef2f2;
+      border: 1px solid #fca5a5;
+      color: #991b1b;
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <h1>True Fire Security</h1>
+    <p>Internal portal — admin access only</p>
+  </div>
+
+  <div id="alert" class="alert" role="alert"></div>
+
+  <form id="login-form" novalidate>
+    <div class="field">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" autocomplete="email" placeholder="you@example.com" required>
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" autocomplete="current-password" placeholder="••••••••" required>
+    </div>
+    <button type="submit" id="login-btn">Log In</button>
+  </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/supabase-client.js"></script>
+<script>
+  const form     = document.getElementById('login-form')
+  const loginBtn = document.getElementById('login-btn')
+  const alertEl  = document.getElementById('alert')
+
+  function showError(message) {
+    alertEl.className = 'alert error'
+    alertEl.textContent = message
+    alertEl.style.display = 'block'
+  }
+
+  function hideError() {
+    alertEl.style.display = 'none'
+  }
+
+  // If already logged in as admin, skip login
+  window.addEventListener('load', async function () {
+    const { data: { session } } = await supabaseClient.auth.getSession()
+    if (!session) return
+
+    const { data: customer } = await supabaseClient
+      .from('customers')
+      .select('role')
+      .eq('user_id', session.user.id)
+      .eq('role', 'admin')
+      .maybeSingle()
+
+    if (customer) window.location.replace('inspection-form.html')
+  })
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault()
+    hideError()
+
+    const email    = document.getElementById('email').value.trim()
+    const password = document.getElementById('password').value
+
+    if (!email || !password) {
+      showError('Please enter your email and password.')
+      return
+    }
+
+    loginBtn.disabled = true
+    loginBtn.textContent = 'Logging in…'
+
+    const { data: { session }, error: signInError } = await supabaseClient.auth.signInWithPassword({ email, password })
+    console.log('Logged in as:', session.user.id)
+
+    const { data, error } = await supabaseClient
+      .from('customers')
+      .select('role')
+      .eq('user_id', session.user.id)
+      .maybeSingle()
+
+    console.log('Customer data:', data)
+    console.log('Customer error:', error)
+    if (signInError) {
+      showError(signInError.message)
+      loginBtn.disabled = false
+      loginBtn.textContent = 'Log In'
+      return
+    }
+
+    const { data: customer, error: roleError } = await supabaseClient
+      .from('customers')
+      .select('role')
+      .eq('user_id', session.user.id)
+      .eq('role', 'admin')
+      .maybeSingle()
+
+    if (roleError || !customer) {
+      await supabaseClient.auth.signOut()
+      showError('Access denied.')
+      loginBtn.disabled = false
+      loginBtn.textContent = 'Log In'
+      return
+    }
+
+    window.location.replace('inspection-form.html')
+  })
+</script>
+</body>
+</html>
