@@ -252,7 +252,6 @@
 <script>
   function formatDate(dateStr) {
     if (!dateStr) return '—'
-    // Parse as local date to avoid UTC offset shifting the day
     const [year, month, day] = dateStr.split('-').map(Number)
     return new Date(year, month - 1, day).toLocaleDateString('en-US', {
       year: 'numeric', month: 'long', day: 'numeric'
@@ -267,7 +266,6 @@
   window.addEventListener('load', async function () {
     const params = new URLSearchParams(window.location.search)
     const id = params.get('id')
-
     if (!id) { showError(); return }
 
     const { data: inspection, error } = await supabaseClient
@@ -292,24 +290,19 @@
       .maybeSingle()
 
     if (error || !inspection) { showError(); return }
-    if (error || !inspection) { showError(); return }
 
-    console.log('Inspection data:', JSON.stringify(inspection))
-    console.log('Properties:', JSON.stringify(inspection.properties))
-    // Populate
     document.title = 'Inspection — ' + (inspection.properties?.name || 'True Fire Security')
-
-    document.getElementById('property-name').textContent   = inspection.properties?.name    || '—'
+    document.getElementById('property-name').textContent    = inspection.properties?.name || '—'
     document.getElementById('property-address').textContent = inspection.properties?.address || ''
-    document.getElementById('customer-name').textContent = inspection.properties?.customers?.full_name || '—'
-    document.getElementById('inspector-name').textContent  = inspection.inspector_name       || '—'
-    document.getElementById('inspection-date').textContent = formatDate(inspection.inspection_date)
-    document.getElementById('next-due-date').textContent   = formatDate(inspection.next_due_date)
+    document.getElementById('customer-name').textContent    = inspection.properties?.customers?.full_name || '—'
+    document.getElementById('inspector-name').textContent   = inspection.inspector_name || '—'
+    document.getElementById('inspection-date').textContent  = formatDate(inspection.inspection_date)
+    document.getElementById('next-due-date').textContent    = formatDate(inspection.next_due_date)
 
     const badge = document.getElementById('result-badge')
-    const result = (inspection.status || '').toLowerCase()
-    badge.textContent = result.toUpperCase()
-    badge.className = 'badge ' + (result === 'pass' ? 'pass' : 'fail')
+    const status = (inspection.status || '').toLowerCase()
+    badge.textContent = status.toUpperCase()
+    badge.className = 'badge ' + (status === 'pass' ? 'pass' : 'fail')
 
     if (inspection.notes && inspection.notes.trim()) {
       document.getElementById('notes').textContent = inspection.notes.trim()
@@ -322,42 +315,8 @@
     } else {
       pdfLink.style.display = 'none'
     }
-    console.log('About to show report')
-    try {
-      document.title = 'Inspection — ' + (inspection.properties?.name || 'True Fire Security')
-      document.getElementById('property-name').textContent    = inspection.properties?.name    || '—'
-      document.getElementById('property-address').textContent = inspection.properties?.address || ''
-      document.getElementById('customer-name').textContent    = inspection.properties?.customers?.full_name || '—'
-      document.getElementById('inspector-name').textContent   = inspection.inspector_name || '—'
-      document.getElementById('inspection-date').textContent  = formatDate(inspection.inspection_date)
-      document.getElementById('next-due-date').textContent    = formatDate(inspection.next_due_date)
 
-      const badge = document.getElementById('result-badge')
-      const result = (inspection.status || '').toLowerCase()
-      badge.textContent = result.toUpperCase()
-      badge.className = 'badge ' + (result === 'pass' ? 'pass' : 'fail')
-
-      if (inspection.notes && inspection.notes.trim()) {
-        document.getElementById('notes').textContent = inspection.notes.trim()
-        document.getElementById('notes-block').style.display = ''
-      }
-
-      const pdfLink = document.getElementById('pdf-link')
-      if (inspection.pdf_url) {
-        pdfLink.href = inspection.pdf_url
-      } else {
-        pdfLink.style.display = 'none'
-      }
-
-      document.getElementById('loading').style.display = 'none'
-      document.getElementById('report').style.display = ''
-
-    } catch(err) {
-      console.error('Display error:', err.message)
-      console.log('Query error:', error)
-      console.log('Query result:', inspection)
-    }
+    document.getElementById('loading').style.display = 'none'
+    document.getElementById('report').style.display = ''
   })
 </script>
-</body>
-</html>
