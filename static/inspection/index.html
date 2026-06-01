@@ -82,7 +82,7 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    #report { display: none; }
+    #report { display: block; }
 
     .report-header {
       border-bottom: 1px solid #f0f0f0;
@@ -196,7 +196,7 @@
 
 <div class="card">
 
-  <div id="loading" class="state">
+  <div id="loading" class="state" style="display:none;">
     <div class="spinner"></div>
     <h2>Loading inspection…</h2>
   </div>
