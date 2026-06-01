@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inspection Report — True Fire Security</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f5f5;
+      color: #222;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 40px 16px 60px;
+    }
+
+    .brand {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .brand h1 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #c0392b;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .brand p {
+      font-size: .78rem;
+      color: #999;
+      margin-top: 3px;
+      letter-spacing: .03em;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 6px rgba(0,0,0,.1);
+      padding: 36px 32px;
+      width: 100%;
+      max-width: 580px;
+    }
+
+    /* Loading / error states */
+    .state {
+      text-align: center;
+      padding: 48px 0;
+    }
+
+    .state .icon {
+      font-size: 2.5rem;
+      margin-bottom: 12px;
+    }
+
+    .state h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 6px;
+    }
+
+    .state p {
+      font-size: .9rem;
+      color: #888;
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid #e5e7eb;
+      border-top-color: #c0392b;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Report content */
+    #report { display: none; }
+
+    .report-header {
+      border-bottom: 1px solid #f0f0f0;
+      padding-bottom: 20px;
+      margin-bottom: 24px;
+    }
+
+    .property-name {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #111;
+      line-height: 1.3;
+    }
+
+    .property-address {
+      font-size: .92rem;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 18px;
+      border-radius: 100px;
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-top: 16px;
+    }
+
+    .badge.pass {
+      background: #ecfdf5;
+      color: #065f46;
+      border: 1.5px solid #6ee7b7;
+    }
+
+    .badge.fail {
+      background: #fef2f2;
+      color: #991b1b;
+      border: 1.5px solid #fca5a5;
+    }
+
+    .fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px 24px;
+    }
+
+    @media (max-width: 480px) {
+      .fields { grid-template-columns: 1fr; }
+      .card { padding: 28px 20px; }
+    }
+
+    .field-label {
+      font-size: .75rem;
+      font-weight: 600;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 4px;
+    }
+
+    .field-value {
+      font-size: .97rem;
+      color: #222;
+      font-weight: 500;
+    }
+
+    .notes-block {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid #f0f0f0;
+    }
+
+    .notes-block .field-label { margin-bottom: 8px; }
+
+    .notes-text {
+      font-size: .93rem;
+      color: #444;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    .pdf-btn {
+      display: block;
+      width: 100%;
+      margin-top: 28px;
+      padding: 13px;
+      background: #c0392b;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 600;
+      text-align: center;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background .15s;
+    }
+
+    .pdf-btn:hover { background: #a93226; }
+  </style>
+</head>
+<body>
+
+<div class="brand">
+  <h1>True Fire Security</h1>
+  <p>Inspection Record</p>
+</div>
+
+<div class="card">
+
+  <div id="loading" class="state">
+    <div class="spinner"></div>
+    <h2>Loading inspection…</h2>
+  </div>
+
+  <div id="error" class="state" style="display:none;">
+    <div class="icon">&#x26A0;&#xFE0F;</div>
+    <h2>Inspection not found</h2>
+    <p>This record may not exist or the link may be incorrect.</p>
+  </div>
+
+  <div id="report">
+    <div class="report-header">
+      <div class="property-name" id="property-name"></div>
+      <div class="property-address" id="property-address"></div>
+      <div id="result-badge" class="badge"></div>
+    </div>
+
+    <div class="fields">
+      <div>
+        <div class="field-label">Customer</div>
+        <div class="field-value" id="customer-name"></div>
+      </div>
+      <div>
+        <div class="field-label">Inspector</div>
+        <div class="field-value" id="inspector-name"></div>
+      </div>
+      <div>
+        <div class="field-label">Inspection Date</div>
+        <div class="field-value" id="inspection-date"></div>
+      </div>
+      <div>
+        <div class="field-label">Next Due Date</div>
+        <div class="field-value" id="next-due-date"></div>
+      </div>
+    </div>
+
+    <div id="notes-block" class="notes-block" style="display:none;">
+      <div class="field-label">Notes</div>
+      <div class="notes-text" id="notes"></div>
+    </div>
+
+    <a id="pdf-link" class="pdf-btn" href="#" target="_blank" rel="noopener noreferrer">
+      View Inspection Report
+    </a>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../../js/supabase-client.js"></script>
+<script>
+  function formatDate(dateStr) {
+    if (!dateStr) return '—'
+    // Parse as local date to avoid UTC offset shifting the day
+    const [year, month, day] = dateStr.split('-').map(Number)
+    return new Date(year, month - 1, day).toLocaleDateString('en-US', {
+      year: 'numeric', month: 'long', day: 'numeric'
+    })
+  }
+
+  function showError() {
+    document.getElementById('loading').style.display = 'none'
+    document.getElementById('error').style.display = ''
+  }
+
+  window.addEventListener('load', async function () {
+    const params = new URLSearchParams(window.location.search)
+    const id = params.get('id')
+
+    if (!id) { showError(); return }
+
+    const { data: inspection, error } = await supabaseClient
+      .from('inspections')
+      .select(`
+        id,
+        inspection_date,
+        next_due_date,
+        inspector_name,
+        result,
+        notes,
+        pdf_url,
+        properties (
+          name,
+          address
+        ),
+        customers (
+          full_name
+        )
+      `)
+      .eq('id', id)
+      .maybeSingle()
+
+    if (error || !inspection) { showError(); return }
+
+    // Populate
+    document.title = 'Inspection — ' + (inspection.properties?.name || 'True Fire Security')
+
+    document.getElementById('property-name').textContent   = inspection.properties?.name    || '—'
+    document.getElementById('property-address').textContent = inspection.properties?.address || ''
+    document.getElementById('customer-name').textContent   = inspection.customers?.full_name || '—'
+    document.getElementById('inspector-name').textContent  = inspection.inspector_name       || '—'
+    document.getElementById('inspection-date').textContent = formatDate(inspection.inspection_date)
+    document.getElementById('next-due-date').textContent   = formatDate(inspection.next_due_date)
+
+    const badge = document.getElementById('result-badge')
+    const result = (inspection.result || '').toLowerCase()
+    badge.textContent = result.toUpperCase()
+    badge.className = 'badge ' + (result === 'pass' ? 'pass' : 'fail')
+
+    if (inspection.notes && inspection.notes.trim()) {
+      document.getElementById('notes').textContent = inspection.notes.trim()
+      document.getElementById('notes-block').style.display = ''
+    }
+
+    const pdfLink = document.getElementById('pdf-link')
+    if (inspection.pdf_url) {
+      pdfLink.href = inspection.pdf_url
+    } else {
+      pdfLink.style.display = 'none'
+    }
+
+    document.getElementById('loading').style.display = 'none'
+    document.getElementById('report').style.display = ''
+  })
+</script>
+</body>
+</html>
