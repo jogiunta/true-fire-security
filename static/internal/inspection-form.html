@@ -102,6 +102,11 @@
       color: #065f46;
     }
 
+    .alert.success a {
+      color: #065f46;
+      word-break: break-all;
+    }
+
     .alert.error {
       background: #fef2f2;
       border: 1px solid #fca5a5;
@@ -171,7 +176,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/supabase-client.js"></script>
 <script>
-  // Auth guard
   ;(async function () {
     const { data: { session } } = await supabaseClient.auth.getSession()
     if (!session) { window.location.replace('login.html'); return }
@@ -195,9 +199,17 @@
   const alertEl        = document.getElementById('alert')
   const progressMsg    = document.getElementById('progress-msg')
 
-  function showAlert(type, message) {
-    alertEl.className = 'alert ' + type
+  function showError(message) {
+    alertEl.className = 'alert error'
     alertEl.textContent = message
+    alertEl.style.display = 'block'
+    alertEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  }
+
+  function showSuccess(inspectionId) {
+    const url = 'https://www.truefireandsecurity.com/static/inspection/?id=' + inspectionId
+    alertEl.className = 'alert success'
+    alertEl.innerHTML = 'Inspection submitted successfully!<br><a href="' + url + '" target="_blank" rel="noopener noreferrer">' + url + '</a>'
     alertEl.style.display = 'block'
     alertEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
   }
@@ -210,7 +222,6 @@
     progressMsg.textContent = msg
   }
 
-  // Load customers on page load
   window.addEventListener('load', async function () {
     const { data: customers, error } = await supabaseClient
       .from('customers')
@@ -220,7 +231,7 @@
 
     if (error) {
       customerSelect.innerHTML = '<option value="">Failed to load customers</option>'
-      showAlert('error', 'Could not load customers: ' + error.message)
+      showError('Could not load customers: ' + error.message)
       return
     }
 
@@ -233,7 +244,6 @@
     })
   })
 
-  // Load properties when customer changes
   customerSelect.addEventListener('change', async function () {
     const customerId = customerSelect.value
     propertySelect.innerHTML = '<option value="">Loading…</option>'
@@ -252,7 +262,7 @@
 
     if (error) {
       propertySelect.innerHTML = '<option value="">Failed to load properties</option>'
-      showAlert('error', 'Could not load properties: ' + error.message)
+      showError('Could not load properties: ' + error.message)
       return
     }
 
@@ -271,7 +281,6 @@
     propertySelect.disabled = false
   })
 
-  // Form submit
   form.addEventListener('submit', async function (e) {
     e.preventDefault()
     hideAlert()
@@ -284,13 +293,12 @@
     const notes          = document.getElementById('notes').value.trim()
     const pdfFile        = document.getElementById('pdf-upload').files[0]
 
-    // Auto-calculate next due date (12 months out)
     const nextDueDate = new Date(inspectionDate)
     nextDueDate.setFullYear(nextDueDate.getFullYear() + 1)
     const nextDueDateStr = nextDueDate.toISOString().split('T')[0]
 
     if (!customerId || !propertyId || !inspectionDate || !result || !pdfFile) {
-      showAlert('error', 'Please fill in all required fields.')
+      showError('Please fill in all required fields.')
       return
     }
 
@@ -327,14 +335,14 @@
       if (insertError) throw new Error('Save failed: ' + insertError.message)
 
       setProgress('')
-      showAlert('success', 'Inspection submitted! ID: ' + inspection.id)
+      showSuccess(inspection.id)
       form.reset()
       propertySelect.disabled = true
       propertySelect.innerHTML = '<option value="">Select a customer first</option>'
 
     } catch (err) {
       setProgress('')
-      showAlert('error', err.message)
+      showError(err.message)
     } finally {
       submitBtn.disabled = false
     }
