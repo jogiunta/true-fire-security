@@ -117,7 +117,6 @@
     }
 
     #qr-section {
-      display: none;
       margin-top: 20px;
       padding: 20px;
       background: #ecfdf5;
@@ -464,7 +463,7 @@
         if (!err) printWrap.appendChild(canvas)
       })
 
-      document.getElementById('qr-section').style.display = ''
+      document.getElementById('qr-section').style.display = 'block'
       document.getElementById('qr-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' })
 
       form.reset()
