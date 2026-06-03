@@ -145,23 +145,18 @@
     alertEl.style.display = 'none'
   }
 
-  function redirectByRole(role) {
-    if (role === 'admin') window.location.replace('inspection-form.html')
-    else window.location.replace('../customer/index.html')
-  }
-
-  // If already logged in, skip login
+  // If already logged in as admin, skip login
   window.addEventListener('load', async function () {
     const { data: { session } } = await supabaseClient.auth.getSession()
     if (!session) return
 
-    const { data: customer } = await supabaseClient
-      .from('customers')
-      .select('role')
+    const { data: adminCheck } = await supabaseClient
+      .from('admin_users')
+      .select('user_id')
       .eq('user_id', session.user.id)
       .maybeSingle()
 
-    if (customer) redirectByRole(customer.role)
+    if (adminCheck) window.location.replace('inspection-form.html')
   })
 
   form.addEventListener('submit', async function (e) {
@@ -187,13 +182,13 @@
       return
     }
 
-    const { data: customer, error: roleError } = await supabaseClient
-      .from('customers')
-      .select('role')
+    const { data: adminCheck, error: roleError } = await supabaseClient
+      .from('admin_users')
+      .select('user_id')
       .eq('user_id', session.user.id)
       .maybeSingle()
 
-    if (roleError || !customer) {
+    if (roleError || !adminCheck) {
       await supabaseClient.auth.signOut()
       showError('Access denied.')
       loginBtn.disabled = false
@@ -201,7 +196,7 @@
       return
     }
 
-    redirectByRole(customer.role)
+    window.location.replace('inspection-form.html')
   })
 </script>
 </body>
